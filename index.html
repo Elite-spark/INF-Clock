@@ -6,6 +6,13 @@
 :root{--a:#f7d99b;--a2:#bd843b;--glow:255,190,90;--glass:80,53,30;--line:255,224,174;--ink:#fff7e9;--glass-alpha:.24;--glow-power:.55;--screen-brightness:1;--blur:18px;--bg:url('https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=2400&q=90')}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}body{font-family:Georgia,'Times New Roman',serif;color:var(--ink);background:#241d17;display:grid;place-items:center;padding:3.2vw;isolation:isolate}
 .backdrop{position:fixed;inset:0;z-index:-3;background-image:var(--bg);background-size:cover;background-position:center;transform:scale(1.035);filter:brightness(var(--screen-brightness)) saturate(1.08);transition:background-image .7s,filter .4s}
+.time .period {
+  font-size: .19em;
+  letter-spacing: .02em;
+  vertical-align: middle;
+  margin-left: .12em;
+  -webkit-text-fill-color: var(--a);
+}
 .backdrop:after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(15,12,10,.13),rgba(17,12,8,.24)),radial-gradient(ellipse at 50% 10%,transparent 15%,rgba(0,0,0,.34) 100%)}
 .ambient{position:fixed;inset:-20%;z-index:-2;pointer-events:none;background:radial-gradient(ellipse at 50% 52%,rgba(var(--glow),calc(var(--glow-power)*.19)),transparent 48%);animation:ambient 12s ease-in-out infinite alternate}
 @keyframes ambient{to{transform:translate3d(2%, -1%,0) scale(1.08);opacity:.6}}
@@ -68,7 +75,18 @@ const $=id=>document.getElementById(id);const backgrounds={champagne:"https://im
 const get=(k,d)=>localStorage.getItem('desk_'+k)||d;const set=(k,v)=>localStorage.setItem('desk_'+k,v);const root=document.body;
 function applyTheme(t){root.dataset.theme=t;set('theme',t);document.querySelectorAll('.theme').forEach(b=>b.classList.toggle('active',b.dataset.theme===t));if(t==='forest')applyBg('forest')}function applyBg(b){root.dataset.bg=b;$('backdrop').style.setProperty('--unused','');$('backdrop').style.backgroundImage=`url("${backgrounds[b]||backgrounds.champagne}")`;set('bg',b);document.querySelectorAll('.bgChoice').forEach(x=>x.classList.toggle('active',x.dataset.bg===b))}
 applyTheme(get('theme','gold'));applyBg(get('bg',get('theme','gold')==='forest'?'forest':'champagne'));
-function tick(){const n=new Date();const parts=new Intl.DateTimeFormat(undefined,{hour:'2-digit',minute:'2-digit',hour12:false}).format(n).split(':');$('time').innerHTML=`${parts[0]}<span class="colon">:</span>${parts[1]}`;$('day').textContent=new Intl.DateTimeFormat(undefined,{weekday:'long'}).format(n);$('date').textContent=new Intl.DateTimeFormat(undefined,{month:'short',day:'2-digit',year:'numeric'}).format(n);if(get('night','off')==='auto')nightCheck(n)}tick();setInterval(tick,1000);
+function tick(){const n=new Date();const parts = new Intl.DateTimeFormat(undefined,{
+  hour:'numeric',
+  minute:'2-digit',
+  hour12:true
+}).formatToParts(n);
+
+const hour = parts.find(p => p.type === 'hour').value;
+const minute = parts.find(p => p.type === 'minute').value;
+const period = parts.find(p => p.type === 'dayPeriod').value;
+
+$('time').innerHTML =
+  `${hour}<span class="colon">:</span>${minute}<span class="period"> ${period}</span>`;$('day').textContent=new Intl.DateTimeFormat(undefined,{weekday:'long'}).format(n);$('date').textContent=new Intl.DateTimeFormat(undefined,{month:'short',day:'2-digit',year:'numeric'}).format(n);if(get('night','off')==='auto')nightCheck(n)}tick();setInterval(tick,1000);
 $('themes').addEventListener('click',e=>{const b=e.target.closest('[data-theme]');if(b)applyTheme(b.dataset.theme)});$('backgrounds').addEventListener('click',e=>{const b=e.target.closest('[data-bg]');if(b)applyBg(b.dataset.bg)});
 const levelNames=['low','medium','high'];$('opacity').value=levelNames.indexOf(get('level','medium'))+1;function applyLevel(v){const level=levelNames[Number(v)-1];root.dataset.level=level;$('transValue').textContent=['Clear','Balanced','Frosted'][Number(v)-1];set('level',level)}applyLevel($('opacity').value);$('opacity').addEventListener('input',e=>applyLevel(e.target.value));
 function applyGlow(v){root.style.setProperty('--glow-power',Number(v)/100);$('glowValue').textContent=v+'%';set('glow',v)}$('glow').value=get('glow','55');applyGlow($('glow').value);$('glow').addEventListener('input',e=>applyGlow(e.target.value));
